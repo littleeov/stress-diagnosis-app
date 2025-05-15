@@ -1,11 +1,15 @@
 import re
-from tensorflow.keras.preprocessing.text import Tokenizer
+import os
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import tokenizer_from_json
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+tokenizer_path = os.path.join(BASE_DIR, 'tokenizer.json')
 
-max_words = 10000
-max_len = 200
-tokenizer = Tokenizer(num_words=max_words)
+with open(tokenizer_path, 'r', encoding='utf-8') as f:
+    tokenizer_json = f.read()
+
+tokenizer = tokenizer_from_json(tokenizer_json)
 
 def cleaned_text(text: str) -> str:
     # Удаление специальных символов и цифр
@@ -19,5 +23,5 @@ def cleaned_text(text: str) -> str:
 def preprocessing_text(text: str) -> str:
     cleaned = cleaned_text(text)
     sequence = tokenizer.texts_to_sequences([cleaned])
-    padded = pad_sequences(sequence, maxlen=max_len)
+    padded = pad_sequences(sequence, maxlen=200)
     return padded
