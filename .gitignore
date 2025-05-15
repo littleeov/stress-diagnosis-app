@@ -5,4 +5,8 @@ __pycache__/
 *.pyc
 .vscode/
 *.sqlite3
+.idea
+.idea/
+.env/
+.venv/
 
