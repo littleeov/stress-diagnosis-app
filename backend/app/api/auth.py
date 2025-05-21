@@ -20,16 +20,18 @@ def register():
         return jsonify({'error': 'Пользователь уже существует'}), 400
 
     if is_company:
-        new_user = User(username=username, name=name, email=email, password=password, is_company=is_company)
-        new_user.set_password(password)
+        new_user = User(username=username, name=name, email=email, is_company=is_company)
     else:
-        new_user = User(username=username, surname=surname, name=name, patronimyc=patronymic,email=email, password=password, is_company=is_company)
-        new_user.set_password(password)
+        new_user = User(username=username, surname=surname, name=name, patronymic=patronymic, email=email, is_company=is_company)
+
+    # Хеширование пароля
+    new_user.set_password(password)
 
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({'message': 'Регистрация успешна'}), 201
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

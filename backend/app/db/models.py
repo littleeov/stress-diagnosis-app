@@ -1,6 +1,8 @@
 from database import db
+from flask_login import UserMixin
+from flask_bcrypt import generate_password_hash, check_password_hash
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -8,13 +10,19 @@ class User(db.Model):
     surname = db.Column(db.String(120))
     name = db.Column(db.String(80), nullable=False)
     patronymic = db.Column(db.String(120))
-    email = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_company = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     assessments = db.relationship("Assessment", back_populates="user")
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class Assessment(db.Model):
     __tablename__ = "assessments"

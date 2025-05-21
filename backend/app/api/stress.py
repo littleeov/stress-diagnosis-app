@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.app.models.stress_model import predict_stress
+from backend.app.db.models import Assessment, AssessmentDetail, Question
+from backend.app.db.database import db
 
 stress_bp = Blueprint('stress', __name__)
 
@@ -12,5 +14,6 @@ def analyze_text():
     text = data['text']
     prediction = predict_stress(text)
     stress_label = int(round(prediction))
+
 
     return jsonify({'stress': stress_label, 'raw_score': prediction})
