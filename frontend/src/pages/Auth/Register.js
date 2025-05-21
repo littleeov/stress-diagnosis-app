@@ -1,115 +1,60 @@
-// src/pages/Auth/Register.js
 import React, { useState } from 'react';
-import {
-  Avatar,
-  Button,
-  TextField,
-  Grid,
-  Box,
-  Typography,
-  Container,
-} from '@mui/material';
+import { Avatar, Button, TextField, Grid, Box, Typography, Container } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { register } from '../../services/authService';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({...formData, [e.target.name]: e.target.value});
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if(formData.password !== formData.confirmPassword){
-      alert("Пароли не совпадают");
+    setError('');
+    setSuccess('');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Пароли не совпадают');
       return;
     }
-    // Здесь можно вызвать API для регистрации
-    console.log(formData);
+    try {
+      const data = await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        is_company: false, // или true, если нужно
+      });
+      setSuccess('Регистрация прошла успешно! Теперь войдите в систему.');
+      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка при регистрации');
+    }
   };
 
   return (
     <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          Регистрация
-        </Typography>
+      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}><LockOutlinedIcon /></Avatar>
+        <Typography component="h1" variant="h5">Регистрация</Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="username"
-                label="Имя пользователя"
-                name="username"
-                autoComplete="username"
-                value={formData.username}
-                onChange={handleChange}
-              />
+              <TextField name="username" label="Имя пользователя" required fullWidth value={formData.username} onChange={handleChange} />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                id="email"
-                label="Email адрес"
-                name="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
+              <TextField name="email" label="Email адрес" required fullWidth value={formData.email} onChange={handleChange} />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                name="password"
-                label="Пароль"
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                value={formData.password}
-                onChange={handleChange}
-              />
+              <TextField name="password" label="Пароль" type="password" required fullWidth value={formData.password} onChange={handleChange} />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                name="confirmPassword"
-                label="Подтвердите пароль"
-                type="password"
-                id="confirmPassword"
-                autoComplete="new-password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
+              <TextField name="confirmPassword" label="Подтвердите пароль" type="password" required fullWidth value={formData.confirmPassword} onChange={handleChange} />
             </Grid>
           </Grid>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            Зарегистрироваться
-          </Button>
+          {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
+          {success && <Typography color="primary" sx={{ mt: 2 }}>{success}</Typography>}
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Зарегистрироваться</Button>
         </Box>
       </Box>
     </Container>

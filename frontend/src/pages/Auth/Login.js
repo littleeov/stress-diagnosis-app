@@ -1,100 +1,41 @@
-// src/pages/Auth/Login.js
 import React, { useState } from 'react';
-import {
-  Avatar,
-  Button,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
-  Grid,
-  Box,
-  Typography,
-  Container,
-} from '@mui/material';
+import { Button, TextField, Container, Box, Typography, Avatar, FormControlLabel, Checkbox, Grid, Link } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { login } from '../../services/authService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    // Здесь можно вызвать API для логина, например через fetch или axios
-    console.log({ email, password, remember });
+    setError('');
+    try {
+      const data = await login({ email, password });
+      console.log('Успешный вход:', data);
+      // Здесь можно сохранить токен или состояние авторизации
+    } catch (err) {
+      setError(err.response?.data?.error || 'Ошибка при входе');
+    }
   };
 
   return (
     <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          Вход в систему
-        </Typography>
+      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}><LockOutlinedIcon /></Avatar>
+        <Typography component="h1" variant="h5">Вход в систему</Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email адрес"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Пароль"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Запомнить меня"
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            Войти
-          </Button>
+          <TextField margin="normal" required fullWidth label="Email адрес" autoComplete="email" autoFocus
+            value={email} onChange={e => setEmail(e.target.value)} />
+          <TextField margin="normal" required fullWidth label="Пароль" type="password" autoComplete="current-password"
+            value={password} onChange={e => setPassword(e.target.value)} />
+          <FormControlLabel control={<Checkbox value="remember" color="primary" />} label="Запомнить меня" />
+          {error && <Typography color="error">{error}</Typography>}
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Войти</Button>
           <Grid container>
-            <Grid item xs>
-              <Link href="#" variant="body2">
-                Забыли пароль?
-              </Link>
-            </Grid>
-            <Grid item>
-              <Link href="/register" variant="body2">
-                {"Нет аккаунта? Зарегистрируйтесь"}
-              </Link>
-            </Grid>
+            <Grid item xs><Link href="#" variant="body2">Забыли пароль?</Link></Grid>
+            <Grid item><Link href="/register" variant="body2">Нет аккаунта? Зарегистрируйтесь</Link></Grid>
           </Grid>
         </Box>
       </Box>
