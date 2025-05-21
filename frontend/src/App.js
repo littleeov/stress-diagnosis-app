@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Container } from '@mui/material';
 
-// Импорт страниц (создадим позже)
+import NavBar from './components/NavBar';
 import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
@@ -12,9 +12,10 @@ import Analysis from './pages/Analysis/Analysis';
 function App() {
   return (
     <>
-      <CssBaseline /> {/* Сброс стилей MUI */}
+      <CssBaseline />
       <Router>
-        <Container maxWidth="md" sx={{ mt: 4 }}>
+        <NavBar />
+        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -29,4 +30,3 @@ function App() {
 }
 
 export default App;
-
