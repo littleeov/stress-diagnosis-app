@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models.stress_model import predict_stress
+from backend.app.models.stress_model import predict_stress
 
 stress_bp = Blueprint('stress', __name__)
 
