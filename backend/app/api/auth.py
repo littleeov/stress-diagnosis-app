@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
-from backend.app.db.models import User
-from backend.app.db.database import db
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, login_required
+from ..db.models import User  # Относительный импорт
+from ..db.database import db
 
 auth_bp = Blueprint('auth', __name__)
+
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -14,19 +15,29 @@ def register():
     patronymic = data.get('patronymic')
     email = data.get('email')
     password = data.get('password')
-    is_company = data.get('is_company')
+    is_company = data.get('is_company', False)
+    employee = data.get('employee')
 
-    if User.query.filter((User.email == email) | (User.username == username)).first():
+    # Проверка существующего пользователя
+    existing_user = User.query.filter(
+        (User.email == email) | (User.username == username)
+    ).first()
+
+    if existing_user:
         return jsonify({'error': 'Пользователь уже существует'}), 400
 
-    if is_company:
-        new_user = User(username=username, name=name, email=email, is_company=is_company)
-    else:
-        new_user = User(username=username, surname=surname, name=name, patronymic=patronymic, email=email, is_company=is_company)
+    # Создание пользователя
+    new_user = User(
+        username=username,
+        name=name,
+        surname=surname if not is_company else None,
+        patronymic=patronymic if not is_company else None,
+        email=email,
+        is_company=is_company,
+        employee=employee if not is_company else None
+    )
 
-    # Хеширование пароля
     new_user.set_password(password)
-
     db.session.add(new_user)
     db.session.commit()
 
@@ -51,4 +62,3 @@ def login():
 def logout():
     logout_user()
     return jsonify({'message': 'Вы вышли из системы'})
-

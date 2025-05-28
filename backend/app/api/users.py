@@ -39,10 +39,8 @@ def save_assessment():
     for detail in details:
         assessment_detail = AssessmentDetail(
             assessment_id=assessment.id,
-            question_id=detail.get('question_id'),
             user_answer=detail.get('user_answer'),
-            model_score=detail.get('model_score'),
-            model_label=detail.get('model_label')
+            model_score=detail.get('model_score')
         )
         db.session.add(assessment_detail)
 

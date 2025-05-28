@@ -1,4 +1,4 @@
-from database import db
+from .database import db
 from flask_login import UserMixin
 from flask_bcrypt import generate_password_hash, check_password_hash
 
@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_company = db.Column(db.Boolean, nullable=False, default=False)
+    employee = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
@@ -36,26 +37,12 @@ class Assessment(db.Model):
     user = db.relationship("User", back_populates="assessments")
     assessment_details = db.relationship("AssessmentDetail", back_populates="assessment")
 
-class Question(db.Model):
-    __tablename__ = "questions"
-
-    id = db.Column(db.Integer, primary_key=True)
-    question_text = db.Column(db.Text, nullable=False)
-    order_num = db.Column(db.Integer, nullable=False, default=0)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    assessment_details = db.relationship("AssessmentDetail", back_populates="question")
-
 class AssessmentDetail(db.Model):
     __tablename__ = "assessment_details"
 
     id = db.Column(db.Integer, primary_key=True)
     assessment_id = db.Column(db.Integer, db.ForeignKey("assessments.id"), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey("questions.id"), nullable=False)
     user_answer = db.Column(db.Text, nullable=False)
     model_score = db.Column(db.Float)
-    model_label = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     assessment = db.relationship("Assessment", back_populates="assessment_details")
-    question = db.relationship("Question", back_populates="assessment_details")
