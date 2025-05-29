@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.app.models.stress_model import predict_stress
 from backend.app.db.models import Assessment, AssessmentDetail
-from backend.app.db.database import db
+from ..db.extensions import db
 
 stress_bp = Blueprint('stress', __name__)
 
