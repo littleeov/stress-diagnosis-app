@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: ./backend
+    container_name: backend-flask
+    restart: always
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-react
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_DB: stress_assessment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: littleeov
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

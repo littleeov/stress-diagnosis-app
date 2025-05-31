@@ -10,7 +10,7 @@ def create_app():
 
     # Конфигурация
     app.config['SECRET_KEY'] = 'littleeov'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:littleeov@localhost:5432/stress_assessment_db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:littleeov@db:5432/stress_assessment_db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Инициализация расширений
