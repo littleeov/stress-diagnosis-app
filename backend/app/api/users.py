@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from ..db.extensions import db  # Импортируем db из extensions.py
+from backend.app.extensions import db  # Импортируем db из extensions.py
 from ..db.models import Assessment, AssessmentDetail
 
 users_bp = Blueprint('users', __name__)

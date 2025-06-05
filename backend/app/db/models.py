@@ -1,4 +1,4 @@
-from .extensions import db  # Импортируем db из единого источника
+from backend.app.extensions import db  # Импортируем db из единого источника
 from flask_login import UserMixin
 from flask_bcrypt import generate_password_hash, check_password_hash
 

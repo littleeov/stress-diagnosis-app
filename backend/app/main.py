@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from .db.extensions import login_manager
+from backend.app.extensions import login_manager
 from .db.database import init_db
 import os
 

@@ -1,4 +1,4 @@
-from .extensions import db
+from backend.app.extensions import db
 
 def init_db(app):
     db.init_app(app)
