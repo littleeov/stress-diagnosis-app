@@ -18,10 +18,10 @@ function App() {
         <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/analysis" element={<Analysis />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/profile" : "/login"} replace />} />
           </Routes>
         </Container>
       </Router>

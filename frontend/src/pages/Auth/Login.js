@@ -1,46 +1,40 @@
 import React, { useState } from 'react';
-import { Button, TextField, Container, Box, Typography, Avatar, FormControlLabel, Checkbox, Grid, Link } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { login } from '../../services/authService';
+import { login } from '../../api/authService';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
     try {
-      const data = await login({ email, password });
-      console.log('Успешный вход:', data);
-      // Здесь можно сохранить токен или состояние авторизации
+      const response = await login(form);
+      // Сохраняем токен (если backend возвращает)
+      localStorage.setItem('token', response.data.token || '');
+      setError('');
+      navigate('/profile'); // перенаправление после успешного входа
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка при входе');
+      setError(err.response?.data?.error || 'Ошибка входа');
     }
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}><LockOutlinedIcon /></Avatar>
-        <Typography component="h1" variant="h5">Вход в систему</Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField margin="normal" required fullWidth label="Email адрес" autoComplete="email" autoFocus
-            value={email} onChange={e => setEmail(e.target.value)} />
-          <TextField margin="normal" required fullWidth label="Пароль" type="password" autoComplete="current-password"
-            value={password} onChange={e => setPassword(e.target.value)} />
-          <FormControlLabel control={<Checkbox value="remember" color="primary" />} label="Запомнить меня" />
-          {error && <Typography color="error">{error}</Typography>}
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Войти</Button>
-          <Grid container>
-            <Grid item xs><Link href="#" variant="body2">Забыли пароль?</Link></Grid>
-            <Grid item><Link href="/register" variant="body2">Нет аккаунта? Зарегистрируйтесь</Link></Grid>
-          </Grid>
-        </Box>
-      </Box>
-    </Container>
+    <form onSubmit={handleSubmit}>
+      <h2>Вход</h2>
+      <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} required />
+      <input type="password" name="password" placeholder="Пароль" value={form.password} onChange={handleChange} required />
+      <button type="submit">Войти</button>
+      {error && <p style={{color: 'red'}}>{error}</p>}
+    </form>
   );
 };
 
 export default Login;
+

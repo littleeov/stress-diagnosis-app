@@ -12,7 +12,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { register as registerUser } from '../../services/authService';
+import { register as registerUser } from '../../api/authService';
 
 const Register = () => {
   const [isCompany, setIsCompany] = useState(false);
