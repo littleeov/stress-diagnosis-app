@@ -27,8 +27,7 @@ const NavBar = () => {
         <Button color="inherit" component={RouterLink} to="/profile">
           Профиль
         </Button>
-          <LogoutButton>
-          </LogoutButton>
+          <LogoutButton />
         </Stack>
       </Toolbar>
     </AppBar>

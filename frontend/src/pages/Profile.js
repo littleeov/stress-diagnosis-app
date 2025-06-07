@@ -16,12 +16,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
-import { fetchUserProfile, updateUserProfile } from '../api/userService';
-import {
-  fetchLastStressResult,
-  fetchStressStatistics,
-  fetchEmployeesResults,
-} from '../api/analysisService';
+import { fetchUserProfile, updateUserProfile, fetchLastAssessment, fetchCompanyStats } from '../api/userService';
 
 const COLORS = ['#00B454', '#FF3900'];
 
@@ -29,9 +24,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isCompany, setIsCompany] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [lastStressResult, setLastStressResult] = useState(null);
-  const [stressStats, setStressStats] = useState(null);
-  const [employeesResults, setEmployeesResults] = useState([]);
+  const [lastAssessment, setLastAssessment] = useState(null);
+  const [companyStats, setCompanyStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
 
@@ -39,19 +33,29 @@ const Profile = () => {
     const loadData = async () => {
       try {
         const userProfile = await fetchUserProfile();
+
+        // Формируем fullName из surname, name, patronymic
+        const fullName = [userProfile.surname, userProfile.name, userProfile.patronymic]
+          .filter(Boolean)
+          .join(' ');
+
+        // Для компании используем username, для пользователя — employee
+        const company = userProfile.is_company ? userProfile.username : userProfile.employee || '';
+
         setProfileData(userProfile);
-        setFormData(userProfile);
-        setIsCompany(userProfile.type === 'company');
+        setFormData({
+          ...userProfile,
+          fullName,
+          company,
+        });
+        setIsCompany(userProfile.is_company);
 
-        const lastResult = await fetchLastStressResult();
-        setLastStressResult(lastResult);
+        const last = await fetchLastAssessment();
+        setLastAssessment(last);
 
-        const stats = await fetchStressStatistics();
-        setStressStats(stats);
-
-        if (userProfile.type === 'company') {
-          const employees = await fetchEmployeesResults();
-          setEmployeesResults(employees);
+        if (userProfile.is_company) {
+          const stats = await fetchCompanyStats();
+          setCompanyStats(stats);
         }
       } catch (error) {
         console.error('Ошибка загрузки данных профиля', error);
@@ -69,18 +73,24 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      await updateUserProfile(formData);
-      setProfileData(formData);
+      // При сохранении отправляем поля, которые backend ожидает
+      const dataToSave = {
+        surname: formData.surname,
+        name: formData.name,
+        patronymic: formData.patronymic,
+        username: formData.username,
+        employee: formData.employee,
+        // Если нужно, добавьте другие поля
+      };
+      await updateUserProfile(dataToSave);
+      setProfileData({ ...profileData, ...dataToSave });
       setEditMode(false);
-      // Можно добавить уведомление об успешном сохранении
     } catch (error) {
       console.error('Ошибка сохранения профиля', error);
-      // Можно добавить уведомление об ошибке
     }
   };
 
-  if (loading)
-    return <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />;
+  if (loading) return <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -88,6 +98,7 @@ const Profile = () => {
         Профиль {isCompany ? 'компании' : 'пользователя'}
       </Typography>
 
+      {/* Форма профиля с редактированием */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Stack spacing={2} direction="row" alignItems="center" flexWrap="wrap">
           {editMode ? (
@@ -99,6 +110,7 @@ const Profile = () => {
                 onChange={handleChange}
                 fullWidth
                 sx={{ minWidth: 300 }}
+                disabled
               />
               {isCompany ? (
                 <TextField
@@ -108,6 +120,7 @@ const Profile = () => {
                   onChange={handleChange}
                   fullWidth
                   sx={{ minWidth: 300 }}
+                  disabled
                 />
               ) : (
                 <TextField
@@ -117,6 +130,7 @@ const Profile = () => {
                   onChange={handleChange}
                   fullWidth
                   sx={{ minWidth: 300 }}
+                  disabled
                 />
               )}
               <Button variant="contained" onClick={handleSave}>
@@ -140,24 +154,40 @@ const Profile = () => {
         </Stack>
       </Paper>
 
+      {/* Последняя диагностика */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
           Последний результат диагностики стресса
         </Typography>
-        <Typography sx={{ mb: 2 }}>
-          {lastStressResult ? lastStressResult.description : 'Нет данных'}
-        </Typography>
-        {stressStats && (
+        {lastAssessment ? (
+          <>
+            <Typography sx={{ mb: 2 }}>
+              Результат: {lastAssessment.stress_score}
+            </Typography>
+          </>
+        ) : (
+          <Typography>Нет данных</Typography>
+        )}
+      </Paper>
+
+      {/* Статистика компании */}
+      {isCompany && companyStats && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Статистика сотрудников
+          </Typography>
+          <Typography>Процент сотрудников в стрессе: {companyStats.stressed_percent.toFixed(1)}%</Typography>
+          <Typography>Процент сотрудников без стресса: {companyStats.no_stress_percent.toFixed(1)}%</Typography>
+
           <PieChart width={300} height={250}>
             <Pie
               data={[
-                { name: 'Низкий стресс', value: stressStats.low },
-                { name: 'Высокий стресс', value: stressStats.high },
+                { name: 'В стрессе', value: companyStats.stressed_percent },
+                { name: 'Без стресса', value: companyStats.no_stress_percent },
               ]}
               cx="50%"
               cy="50%"
               outerRadius={80}
-              fill="#8884d8"
               dataKey="value"
               label
             >
@@ -168,47 +198,6 @@ const Profile = () => {
             <Tooltip />
             <Legend />
           </PieChart>
-        )}
-        {stressStats && (
-          <Typography>
-            Результат: {stressStats.score} из {stressStats.max}
-          </Typography>
-        )}
-      </Paper>
-
-      {isCompany && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Статистика сотрудников
-          </Typography>
-          <Typography>
-            Процент сотрудников в стрессе: {stressStats?.stressedPercent ?? 0}%
-          </Typography>
-          <Typography>
-            Процент сотрудников без стресса: {stressStats?.noStressPercent ?? 0}%
-          </Typography>
-          {stressStats && (
-            <PieChart width={300} height={250}>
-              <Pie
-                data={[
-                  { name: 'В стрессе', value: stressStats.stressedPercent },
-                  { name: 'Без стресса', value: stressStats.noStressPercent },
-                ]}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                label
-              >
-                {COLORS.map((color, index) => (
-                  <Cell key={`cell-${index}`} fill={color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          )}
 
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
             Последние результаты сотрудников
@@ -222,10 +211,10 @@ const Profile = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {employeesResults.map((emp) => (
+                {companyStats.employees_results.map((emp) => (
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.result}</TableCell>
+                    <TableCell>{emp.stress_score}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

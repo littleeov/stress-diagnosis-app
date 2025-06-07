@@ -10,7 +10,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { sendAnalysisAnswers } from '../api/analysisService'; // создайте этот метод в analysisService.js
+import { sendAnalysisAnswers } from '../api/analysisService';
+import { saveAssessment } from '../api/userService';
 
 const questions = [
   'Опишите, как вы себя чувствуете в последнее время.',
@@ -43,7 +44,17 @@ const Analysis = () => {
     setLoading(true);
     try {
       const response = await sendAnalysisAnswers(answers);
-      setResult(response.diagnosis); // предполагается, что backend возвращает поле diagnosis с результатом
+      setResult(response);
+
+      // Сохраняем результаты диагностики
+      await saveAssessment({
+        response_data: answers,
+        stress_score: response.avg_score,
+        details: answers.map((ans) => ({
+          user_answer: ans,
+          model_score: null, // если есть детализация от backend, можно сюда вставить
+        })),
+      });
     } catch (err) {
       setError('Ошибка при отправке данных. Попробуйте позже.');
     } finally {
@@ -92,7 +103,7 @@ const Analysis = () => {
             <Typography variant="h6" gutterBottom>
               Результат диагностики:
             </Typography>
-            <Typography>{result}</Typography>
+            <Typography>Итоговый уровень стресса: {result.stress_label}</Typography>
             <Button sx={{ mt: 2 }} variant="outlined" onClick={() => navigate('/profile')}>
               Вернуться в профиль
             </Button>
