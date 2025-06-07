@@ -15,47 +15,85 @@ import {
   TableRow,
   CircularProgress,
 } from '@mui/material';
-import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
-import { fetchUserProfile, updateUserProfile, fetchLastAssessment, fetchCompanyStats } from '../api/userService';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from 'recharts';
+import dayjs from 'dayjs';
+import {
+  fetchUserProfile,
+  updateUserProfile,
+  fetchLastAssessment,
+  fetchCompanyStats,
+} from '../api/userService';
 
 const COLORS = ['#00B454', '#FF3900'];
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
-  const [isCompany, setIsCompany] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [lastAssessment, setLastAssessment] = useState(null);
   const [companyStats, setCompanyStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
+  const [isCompany, setIsCompany] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const userProfile = await fetchUserProfile();
-
-        // Формируем fullName из surname, name, patronymic
-        const fullName = [userProfile.surname, userProfile.name, userProfile.patronymic]
-          .filter(Boolean)
-          .join(' ');
-
-        // Для компании используем username, для пользователя — employee
-        const company = userProfile.is_company ? userProfile.username : userProfile.employee || '';
-
-        setProfileData(userProfile);
-        setFormData({
-          ...userProfile,
-          fullName,
-          company,
-        });
         setIsCompany(userProfile.is_company);
 
-        const last = await fetchLastAssessment();
-        setLastAssessment(last);
-
         if (userProfile.is_company) {
+          const companyName = userProfile.company_name || userProfile.username || '';
+
+          setProfileData(userProfile);
+          setFormData({
+            companyName,
+            username: userProfile.username || '',
+          });
+
           const stats = await fetchCompanyStats();
           setCompanyStats(stats);
+        } else {
+          const fullName = [userProfile.surname, userProfile.name, userProfile.patronymic]
+            .filter(Boolean)
+            .join(' ');
+          const company = userProfile.employee || '';
+
+          setProfileData(userProfile);
+          setFormData({
+            fullName,
+            company,
+            surname: userProfile.surname || '',
+            name: userProfile.name || '',
+            patronymic: userProfile.patronymic || '',
+            username: userProfile.username || '',
+            employee: userProfile.employee || '',
+          });
+
+          const last = await fetchLastAssessment();
+          setLastAssessment(last);
+
+          setCompanyStats({
+            employees_results: last
+              ? [{
+                  id: userProfile.id,
+                  name: fullName,
+                  stress_score: last.stress_score,
+                  created_at: last.created_at,
+                }]
+              : [],
+          });
         }
       } catch (error) {
         console.error('Ошибка загрузки данных профиля', error);
@@ -73,24 +111,66 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      // При сохранении отправляем поля, которые backend ожидает
-      const dataToSave = {
-        surname: formData.surname,
-        name: formData.name,
-        patronymic: formData.patronymic,
-        username: formData.username,
-        employee: formData.employee,
-        // Если нужно, добавьте другие поля
-      };
-      await updateUserProfile(dataToSave);
-      setProfileData({ ...profileData, ...dataToSave });
+      if (isCompany) {
+        const dataToSave = {
+          company_name: formData.companyName,
+          username: formData.username,
+        };
+        await updateUserProfile(dataToSave);
+        setProfileData((prev) => ({ ...prev, ...dataToSave }));
+      } else {
+        const dataToSave = {
+          surname: formData.surname,
+          name: formData.name,
+          patronymic: formData.patronymic,
+          username: formData.username,
+          employee: formData.employee,
+        };
+        await updateUserProfile(dataToSave);
+        setProfileData((prev) => ({ ...prev, ...dataToSave }));
+        const fullName = [dataToSave.surname, dataToSave.name, dataToSave.patronymic]
+          .filter(Boolean)
+          .join(' ');
+        setFormData((prev) => ({
+          ...prev,
+          fullName,
+          company: dataToSave.employee,
+        }));
+      }
       setEditMode(false);
     } catch (error) {
       console.error('Ошибка сохранения профиля', error);
     }
   };
 
-  if (loading) return <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />;
+  // Данные для линейного графика компании: stress_history с числами
+  const lineChartData = companyStats?.stress_history
+    ?.map((item) => ({
+      date: dayjs(item.date).format('DD.MM.YYYY'),
+      stressedPercent: Number(item.stressed_percent),
+    }))
+    .filter(item => !isNaN(item.stressedPercent))
+    .sort((a, b) => dayjs(a.date, 'DD.MM.YYYY').unix() - dayjs(b.date, 'DD.MM.YYYY').unix()) || [];
+
+  // Данные для круговой диаграммы компании
+  const pieData = companyStats
+    ? [
+        { name: 'В стрессе', value: Number(companyStats.stressed_percent) },
+        { name: 'Без стресса', value: Number(companyStats.no_stress_percent) },
+      ]
+    : [];
+
+  // Для таблицы и графика истории результатов пользователя и компании
+  const chartData = companyStats?.employees_results
+    ?.map((item) => ({
+      date: dayjs(item.created_at).format('DD.MM.YYYY'),
+      stress: Number(item.stress_score),
+    }))
+    .filter(item => !isNaN(item.stress))
+    .sort((a, b) => dayjs(a.date, 'DD.MM.YYYY').unix() - dayjs(b.date, 'DD.MM.YYYY').unix()) || [];
+
+  if (loading)
+    return <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -98,123 +178,169 @@ const Profile = () => {
         Профиль {isCompany ? 'компании' : 'пользователя'}
       </Typography>
 
-      {/* Форма профиля с редактированием */}
+      {/* Форма редактирования */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Stack spacing={2} direction="row" alignItems="center" flexWrap="wrap">
           {editMode ? (
-            <>
-              <TextField
-                label="ФИО"
-                name="fullName"
-                value={formData.fullName || ''}
-                onChange={handleChange}
-                fullWidth
-                sx={{ minWidth: 300 }}
-                disabled
-              />
-              {isCompany ? (
+            isCompany ? (
+              <>
                 <TextField
                   label="Название компании"
-                  name="company"
-                  value={formData.company || ''}
+                  name="companyName"
+                  value={formData.companyName}
                   onChange={handleChange}
                   fullWidth
                   sx={{ minWidth: 300 }}
-                  disabled
                 />
-              ) : (
+                <TextField
+                  label="Username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={{ minWidth: 300 }}
+                />
+                <Button variant="contained" onClick={handleSave}>
+                  Сохранить
+                </Button>
+                <Button variant="outlined" onClick={() => setEditMode(false)}>
+                  Отмена
+                </Button>
+              </>
+            ) : (
+              <>
+                <TextField
+                  label="Фамилия"
+                  name="surname"
+                  value={formData.surname}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={{ minWidth: 200 }}
+                />
+                <TextField
+                  label="Имя"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={{ minWidth: 200 }}
+                />
+                <TextField
+                  label="Отчество"
+                  name="patronymic"
+                  value={formData.patronymic}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={{ minWidth: 200 }}
+                />
                 <TextField
                   label="Компания"
-                  name="company"
-                  value={formData.company || ''}
+                  name="employee"
+                  value={formData.employee}
                   onChange={handleChange}
                   fullWidth
                   sx={{ minWidth: 300 }}
-                  disabled
                 />
-              )}
-              <Button variant="contained" onClick={handleSave}>
-                Сохранить
-              </Button>
-              <Button variant="outlined" onClick={() => setEditMode(false)}>
-                Отмена
-              </Button>
-            </>
+                <Button variant="contained" onClick={handleSave}>
+                  Сохранить
+                </Button>
+                <Button variant="outlined" onClick={() => setEditMode(false)}>
+                  Отмена
+                </Button>
+              </>
+            )
           ) : (
-            <>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h6">{formData.fullName}</Typography>
-                <Typography color="text.secondary">{formData.company}</Typography>
-              </Box>
-              <Button variant="outlined" onClick={() => setEditMode(true)}>
-                Редактировать
-              </Button>
-            </>
+            isCompany ? (
+              <>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6">{formData.companyName}</Typography>
+                  <Typography color="text.secondary">Username: {formData.username}</Typography>
+                </Box>
+                <Button variant="outlined" onClick={() => setEditMode(true)}>
+                  Редактировать
+                </Button>
+              </>
+            ) : (
+              <>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6">{formData.fullName}</Typography>
+                  <Typography color="text.secondary">{formData.company}</Typography>
+                </Box>
+                <Button variant="outlined" onClick={() => setEditMode(true)}>
+                  Редактировать
+                </Button>
+              </>
+            )
           )}
         </Stack>
       </Paper>
 
-      {/* Последняя диагностика */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Последний результат диагностики стресса
-        </Typography>
-        {lastAssessment ? (
-          <>
+      {/* Для обычного пользователя: последний результат диагностики */}
+      {!isCompany && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Последний результат диагностики стресса
+          </Typography>
+          {lastAssessment ? (
             <Typography sx={{ mb: 2 }}>
-              Результат: {lastAssessment.stress_score}
+              Результат: {(lastAssessment.stress_score).toFixed(1)}%
             </Typography>
-          </>
-        ) : (
-          <Typography>Нет данных</Typography>
-        )}
-      </Paper>
+          ) : (
+            <Typography>Нет данных</Typography>
+          )}
+        </Paper>
+      )}
 
-      {/* Статистика компании */}
+      {/* Для компании: круговая диаграмма и линейный график динамики */}
       {isCompany && companyStats && (
+        <>
+          <Paper sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Процентное соотношение сотрудников
+            </Typography>
+            <PieChart width={300} height={250}>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                dataKey="value"
+                label={(entry) => `${entry.name}: ${entry.value.toFixed(1)}%`}
+              >
+                {COLORS.map((color, index) => (
+                  <Cell key={`cell-${index}`} fill={color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+              <Legend />
+            </PieChart>
+          </Paper>
+        </>
+      )}
+
+      {/* Таблица с последними результатами сотрудников (компания) или историей результатов (пользователь) */}
+      {companyStats?.employees_results && companyStats.employees_results.length > 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Статистика сотрудников
-          </Typography>
-          <Typography>Процент сотрудников в стрессе: {companyStats.stressed_percent.toFixed(1)}%</Typography>
-          <Typography>Процент сотрудников без стресса: {companyStats.no_stress_percent.toFixed(1)}%</Typography>
-
-          <PieChart width={300} height={250}>
-            <Pie
-              data={[
-                { name: 'В стрессе', value: companyStats.stressed_percent },
-                { name: 'Без стресса', value: companyStats.no_stress_percent },
-              ]}
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              dataKey="value"
-              label
-            >
-              {COLORS.map((color, index) => (
-                <Cell key={`cell-${index}`} fill={color} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
-            Последние результаты сотрудников
+            {isCompany ? 'Последние результаты сотрудников' : 'История результатов'}
           </Typography>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Имя сотрудника</TableCell>
-                  <TableCell>Результат</TableCell>
+                  <TableCell>Имя</TableCell>
+                  <TableCell>Результат (%)</TableCell>
+                  {!isCompany && <TableCell>Дата</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {companyStats.employees_results.map((emp) => (
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.stress_score}</TableCell>
+                    <TableCell>{(emp.stress_score).toFixed(1)}</TableCell>
+                    {!isCompany && (
+                      <TableCell>{emp.created_at ? dayjs(emp.created_at).format('DD.MM.YYYY') : '-'}</TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -222,8 +348,35 @@ const Profile = () => {
           </TableContainer>
         </Paper>
       )}
+
+      {/* Для пользователя: линейный график истории результатов */}
+      {!isCompany && companyStats && companyStats.employees_results && companyStats.employees_results.length > 0 && (
+        <Paper sx={{ p: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            История результатов диагностики
+          </Typography>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis domain={[0, 100]} tickFormatter={(tick) => `${tick}%`} />
+              <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+              <Line
+                type="monotone"
+                dataKey="stress"
+                stroke="#8884d8"
+                activeDot={{ r: 8 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Paper>
+      )}
     </Container>
   );
 };
 
 export default Profile;
+
