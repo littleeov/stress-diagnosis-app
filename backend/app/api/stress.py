@@ -17,18 +17,20 @@ def analyze_text():
 def diagnose():
     data = request.get_json()
     answers = data.get('answers')
+    details = []
     if not answers or not isinstance(answers, list):
         return jsonify({'error': 'No answers provided'}), 400
 
     total_score = 0
     for answer in answers:
         prediction = predict_stress(answer)
+        details.append(int(round(prediction)))
         total_score += prediction
 
-    avg_score = total_score / len(answers)
-    stress_label = int(round(avg_score))
+    stress_label = int(round(total_score))
 
     return jsonify({
         'stress_label': stress_label,
-        'avg_score': avg_score
+        'avg_score': total_score,
+        'details': details
     })

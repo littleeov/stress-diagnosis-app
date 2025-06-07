@@ -39,10 +39,14 @@ def save_assessment():
     db.session.commit()
 
     for detail in details:
+        if detail.get('model_score')==0:
+            model_score = 1
+        else:
+            model_score = detail.get('model_score')
         assessment_detail = AssessmentDetail(
             assessment_id=assessment.id,
             user_answer=detail.get('user_answer'),
-            model_score=detail.get('model_score')
+            model_score=model_score
         )
         db.session.add(assessment_detail)
 

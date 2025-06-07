@@ -44,15 +44,16 @@ const Analysis = () => {
     setLoading(true);
     try {
       const response = await sendAnalysisAnswers(answers);
+
       setResult(response);
 
       // Сохраняем результаты диагностики
       await saveAssessment({
         response_data: answers,
         stress_score: response.avg_score,
-        details: answers.map((ans) => ({
+        details: answers.map((ans,index) => ({
           user_answer: ans,
-          model_score: null, // если есть детализация от backend, можно сюда вставить
+          model_score: response.details[index], // если есть детализация от backend, можно сюда вставить
         })),
       });
     } catch (err) {

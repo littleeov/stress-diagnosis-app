@@ -34,6 +34,7 @@ import {
   updateUserProfile,
   fetchLastAssessment,
   fetchCompanyStats,
+  fetchUserAssessments,
 } from '../api/userService';
 
 const COLORS = ['#00B454', '#FF3900'];
@@ -46,6 +47,8 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [isCompany, setIsCompany] = useState(false);
+  const [userAssessments, setUserAssessments] = useState([]);
+  const [showAllResults, setShowAllResults] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -55,12 +58,8 @@ const Profile = () => {
 
         if (userProfile.is_company) {
           const companyName = userProfile.company_name || userProfile.username || '';
-
           setProfileData(userProfile);
-          setFormData({
-            companyName,
-            username: userProfile.username || '',
-          });
+          setFormData({ companyName, username: userProfile.username });
 
           const stats = await fetchCompanyStats();
           setCompanyStats(stats);
@@ -74,26 +73,26 @@ const Profile = () => {
           setFormData({
             fullName,
             company,
-            surname: userProfile.surname || '',
-            name: userProfile.name || '',
-            patronymic: userProfile.patronymic || '',
-            username: userProfile.username || '',
-            employee: userProfile.employee || '',
+            surname: userProfile.surname,
+            name: userProfile.name,
+            patronymic: userProfile.patronymic,
+            username: userProfile.username,
+            employee: userProfile.employee,
           });
 
-          const last = await fetchLastAssessment();
+          const [last, assessments] = await Promise.all([
+            fetchLastAssessment(),
+            fetchUserAssessments(),
+          ]);
+
           setLastAssessment(last);
 
-          setCompanyStats({
-            employees_results: last
-              ? [{
-                  id: userProfile.id,
-                  name: fullName,
-                  stress_score: last.stress_score,
-                  created_at: last.created_at,
-                }]
-              : [],
-          });
+          // Сортируем историю от последнего к первому (по убыванию даты)
+          const sortedAssessments = assessments
+            .slice()
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          setUserAssessments(sortedAssessments);
         }
       } catch (error) {
         console.error('Ошибка загрузки данных профиля', error);
@@ -160,14 +159,17 @@ const Profile = () => {
       ]
     : [];
 
-  // Для таблицы и графика истории результатов пользователя и компании
-  const chartData = companyStats?.employees_results
+  // Для таблицы и графика истории результатов пользователя
+  const chartData = userAssessments
     ?.map((item) => ({
       date: dayjs(item.created_at).format('DD.MM.YYYY'),
       stress: Number(item.stress_score),
     }))
     .filter(item => !isNaN(item.stress))
     .sort((a, b) => dayjs(a.date, 'DD.MM.YYYY').unix() - dayjs(b.date, 'DD.MM.YYYY').unix()) || [];
+
+  // Пагинация: показываем 3 последних или все
+  const displayedAssessments = showAllResults ? userAssessments : userAssessments.slice(0, 3);
 
   if (loading)
     return <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />;
@@ -275,19 +277,15 @@ const Profile = () => {
         </Stack>
       </Paper>
 
-      {/* Для обычного пользователя: последний результат диагностики */}
-      {!isCompany && (
+      {/* Для пользователя: последний результат диагностики */}
+      {!isCompany && lastAssessment && (
         <Paper sx={{ p: 3, mb: 4 }}>
           <Typography variant="h6" gutterBottom>
             Последний результат диагностики стресса
           </Typography>
-          {lastAssessment ? (
-            <Typography sx={{ mb: 2 }}>
-              Результат: {(lastAssessment.stress_score).toFixed(1)}%
-            </Typography>
-          ) : (
-            <Typography>Нет данных</Typography>
-          )}
+          <Typography sx={{ mb: 2 }}>
+            Результат: {(lastAssessment.stress_score).toFixed(1)}%
+          </Typography>
         </Paper>
       )}
 
@@ -315,45 +313,67 @@ const Profile = () => {
               <Legend />
             </PieChart>
           </Paper>
+
+          {lineChartData.length > 0 && (
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Динамика процента сотрудников в стрессе
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={lineChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 100]} tickFormatter={(tick) => `${tick}%`} />
+                  <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                  <Line type="monotone" dataKey="stressedPercent" stroke="#8884d8" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Paper>
+          )}
         </>
       )}
 
-      {/* Таблица с последними результатами сотрудников (компания) или историей результатов (пользователь) */}
-      {companyStats?.employees_results && companyStats.employees_results.length > 0 && (
-        <Paper sx={{ p: 3 }}>
+      {/* История результатов пользователя с пагинацией */}
+      {!isCompany && userAssessments.length > 0 && (
+        <Paper sx={{ p: 3, mt: 4 }}>
           <Typography variant="h6" gutterBottom>
-            {isCompany ? 'Последние результаты сотрудников' : 'История результатов'}
+            История результатов диагностики
           </Typography>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Имя</TableCell>
+                  <TableCell>Дата</TableCell>
                   <TableCell>Результат (%)</TableCell>
-                  {!isCompany && <TableCell>Дата</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {companyStats.employees_results.map((emp) => (
-                  <TableRow key={emp.id}>
-                    <TableCell>{emp.name}</TableCell>
-                    <TableCell>{(emp.stress_score).toFixed(1)}</TableCell>
-                    {!isCompany && (
-                      <TableCell>{emp.created_at ? dayjs(emp.created_at).format('DD.MM.YYYY') : '-'}</TableCell>
-                    )}
+                {displayedAssessments.map((assessment, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{dayjs(assessment.created_at).format('DD.MM.YYYY HH:mm')}</TableCell>
+                    <TableCell>{(assessment.stress_score).toFixed(1)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+          {userAssessments.length > 3 && (
+            <Button
+              variant="outlined"
+              onClick={() => setShowAllResults(!showAllResults)}
+              sx={{ mt: 2 }}
+            >
+              {showAllResults ? 'Свернуть' : 'Показать больше'}
+            </Button>
+          )}
         </Paper>
       )}
 
       {/* Для пользователя: линейный график истории результатов */}
-      {!isCompany && companyStats && companyStats.employees_results && companyStats.employees_results.length > 0 && (
+      {!isCompany && userAssessments.length > 0 && (
         <Paper sx={{ p: 3, mt: 4 }}>
           <Typography variant="h6" gutterBottom>
-            История результатов диагностики
+            График результатов диагностики
           </Typography>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
@@ -379,4 +399,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

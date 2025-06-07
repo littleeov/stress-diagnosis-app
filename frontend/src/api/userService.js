@@ -22,7 +22,7 @@ export const fetchLastAssessment = async () => {
   return response.data;
 };
 
-export const fetchAssessments = async () => {
+export const fetchUserAssessments = async () => {
   const response = await axios.get(`${API_URL}/assessments`, { withCredentials: true });
   return response.data;
 };
