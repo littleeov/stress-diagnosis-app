@@ -43,7 +43,6 @@ def register():
 
     return jsonify({'message': 'Регистрация успешна'}), 201
 
-
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()

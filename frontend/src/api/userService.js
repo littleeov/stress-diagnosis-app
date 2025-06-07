@@ -1,27 +1,25 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/users'; // Адрес вашего backend для пользователей
+const API_URL = 'http://localhost:5000/api/users';
 
-// Получение профиля текущего пользователя
-export const getProfile = async () => {
-  const response = await axios.get(`${API_URL}/profile`, { withCredentials: true });
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Получить профиль пользователя (или компании)
+export const fetchUserProfile = async () => {
+  const response = await axios.get(`${API_URL}/profile`, {
+    headers: getAuthHeaders(),
+  });
   return response.data;
 };
 
-// Получение истории оценок пользователя
-export const getAssessments = async () => {
-  const response = await axios.get(`${API_URL}/assessments`, { withCredentials: true });
+// Обновить профиль пользователя (или компании)
+export const updateUserProfile = async (profileData) => {
+  const response = await axios.put(`${API_URL}/profile`, profileData, {
+    headers: getAuthHeaders(),
+  });
   return response.data;
 };
 
-// Сохранение результатов теста
-export const saveAssessment = async (assessmentData) => {
-  const response = await axios.post(`${API_URL}/assessments`, assessmentData, { withCredentials: true });
-  return response.data;
-};
-
-// Обновление профиля пользователя (пример)
-export const updateProfile = async (profileData) => {
-  const response = await axios.put(`${API_URL}/profile`, profileData, { withCredentials: true });
-  return response.data;
-};
