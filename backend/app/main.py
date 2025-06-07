@@ -26,9 +26,9 @@ def create_app():
         return User.query.get(int(user_id))
 
     # Регистрация Blueprints
-    from .api.stress import stress_bp
-    from .api.auth import auth_bp
-    from .api.users import users_bp
+    from .routes.stress import stress_bp
+    from .routes.auth import auth_bp
+    from .routes.users import users_bp
 
     app.register_blueprint(stress_bp, url_prefix='/stress')
     app.register_blueprint(auth_bp, url_prefix='/auth')

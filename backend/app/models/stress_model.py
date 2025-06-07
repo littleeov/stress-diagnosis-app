@@ -1,19 +1,18 @@
-import tensorflow as tf
+from tensorflow.keras.models import load_model
+from .preprocessing import tokenizer, preprocess_text  # поменяем название на правильное
 import os
-from .preprocessing import preprocessing_text
 
-# Абсолютный путь к файлу модели
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'stress_model.h5')
+_model = None
 
-# Загрузка модели один раз при импорте модуля
-model = tf.keras.models.load_model(MODEL_PATH)
+def get_model():
+    global _model
+    if _model is None:
+        model_path = os.path.join(os.path.dirname(__file__), 'stress_model.h5')
+        _model = load_model(model_path)
+    return _model
 
 def predict_stress(text: str) -> float:
-    # Здесь должна быть ваша предобработка текста (токенизация, паддинг)
-    processed_input = preprocessing_text(text)
-
-    # Предсказание модели (пример для одного образца)
-    prediction = model.predict(processed_input)
-
-    # prediction - массив, берем первый элемент и первый класс
+    processed = preprocess_text(text)
+    model = get_model()
+    prediction = model.predict(processed)
     return float(prediction[0][0])

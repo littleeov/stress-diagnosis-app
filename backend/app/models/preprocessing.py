@@ -20,7 +20,7 @@ def cleaned_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def preprocessing_text(text: str) -> str:
+def preprocess_text(text: str) -> str:
     cleaned = cleaned_text(text)
     sequence = tokenizer.texts_to_sequences([cleaned])
     padded = pad_sequences(sequence, maxlen=200)
