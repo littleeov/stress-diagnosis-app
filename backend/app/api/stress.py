@@ -12,3 +12,23 @@ def analyze_text():
     prediction = predict_stress(text)
     stress_label = int(round(prediction))
     return jsonify({'stress': stress_label, 'raw_score': prediction})
+
+@stress_bp.route('/diagnose', methods=['POST'])
+def diagnose():
+    data = request.get_json()
+    answers = data.get('answers')
+    if not answers or not isinstance(answers, list):
+        return jsonify({'error': 'No answers provided'}), 400
+
+    total_score = 0
+    for answer in answers:
+        prediction = predict_stress(answer)
+        total_score += prediction
+
+    avg_score = total_score / len(answers)
+    stress_label = int(round(avg_score))
+
+    return jsonify({
+        'stress_label': stress_label,
+        'avg_score': avg_score
+    })
