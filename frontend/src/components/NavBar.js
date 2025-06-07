@@ -2,6 +2,7 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import LogoutButton from "./LogoutButton";
 
 const NavBar = () => {
   return (
@@ -26,6 +27,8 @@ const NavBar = () => {
         <Button color="inherit" component={RouterLink} to="/profile">
           Профиль
         </Button>
+          <LogoutButton>
+          </LogoutButton>
         </Stack>
       </Toolbar>
     </AppBar>
