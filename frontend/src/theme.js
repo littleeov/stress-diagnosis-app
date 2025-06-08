@@ -1,29 +1,70 @@
 // src/theme.js
 import { createTheme } from '@mui/material/styles';
-import { red, green } from '@mui/material/colors';
 
 const theme = createTheme({
   palette: {
+    mode: 'light',
     primary: {
-      main: '#00B454',
-      dark: '#007536',
-      light: '#36DA82',
+      main: 'rgb(123, 206, 55)', // мягкий зелёный
+      light: 'rgb(155, 227, 95)', // светлее
+      dark: 'rgb(94, 184, 20)', // темнее
     },
     secondary: {
-      main: '#FF3900',
-      dark: '#A62500',
-      light: '#FF6B40',
+      main: 'rgb(42, 159, 109)', // акцентный бирюзовый
+      light: 'rgb(73, 176, 132)',
+      dark: 'rgb(15, 141, 87)',
     },
+    background: {
+      default: '#f8fff5', // мягкий фон
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#333',
+      secondary: '#555',
+    },
+    success: {
+      main: 'rgb(169, 199, 22)', // близкий дополнительный зелёный
+    }
   },
   typography: {
-    fontFamily: '"Titillium Web", sans-serif',
-    h1: {
-      fontWeight: 700,
+    fontFamily: `'Poppins', 'Helvetica', 'Arial', sans-serif`,
+    h4: {
+      fontWeight: 600,
     },
-    h2: {
-      fontWeight: 700,
+    h6: {
+      fontWeight: 500,
     },
-    // остальные стили по необходимости
+    body1: {
+      fontSize: '1rem',
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        variant: 'outlined',
+        fullWidth: true,
+      },
+    },
   },
 });
 

@@ -1,15 +1,15 @@
-FROM node:20-alpine as build
+FROM node:20
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install
+COPY frontend/ /app
 
-COPY . .
-RUN npm run build
+RUN npm install && npm run build
 
-FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
+# Установка serve для запуска production-сборки
+RUN npm install -g serve
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 3000
+
+CMD ["serve", "-s", "build"]
+

@@ -1,19 +1,15 @@
-# Dockerfile
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-# Установка зависимостей
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Установка системных зависимостей для psycopg2 и других пакетов
+RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
-# Копируем проект
-COPY . .
+COPY backend/ /app/
 
-# Установка переменной окружения
-ENV FLASK_APP=wsgi.py
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Открываем порт
 EXPOSE 5000
 
 CMD ["python", "wsgi.py"]
