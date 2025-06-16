@@ -12,11 +12,8 @@ with open(tokenizer_path, 'r', encoding='utf-8') as f:
 tokenizer = tokenizer_from_json(tokenizer_json)
 
 def cleaned_text(text: str) -> str:
-    # Удаление специальных символов и цифр
     text = re.sub(r'[^a-zA-Z\s]', '', text)
-    # Приведение к нижнему регистру
     text = text.lower()
-    # Удаление лишних пробелов
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 

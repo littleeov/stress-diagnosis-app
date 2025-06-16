@@ -7,7 +7,6 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// Отправка ответов на вопросы для диагностики
 export const sendAnalysisAnswers = async (answers) => {
   const response = await axios.post(
     `${API_URL}/diagnose`,
@@ -16,4 +15,5 @@ export const sendAnalysisAnswers = async (answers) => {
   );
   return response.data;
 };
+
 

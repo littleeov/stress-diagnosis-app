@@ -18,14 +18,10 @@ def register():
     is_company = data.get('is_company', False)
     employee = data.get('employee')
 
-    # Проверка существующего пользователя по email или username
-    existing_user = User.query.filter(
-        (User.email == email) | (User.username == username)
-    ).first()
+    existing_user = User.query.filter((User.email == email) | (User.username == username)).first()
     if existing_user:
         return jsonify({'error': 'Пользователь уже существует'}), 400
 
-    # Создаём пользователя
     new_user = User(
         username=username,
         name=name,
@@ -38,7 +34,6 @@ def register():
     new_user.set_password(password)
     db.session.add(new_user)
     db.session.commit()
-
     return jsonify({'message': 'Регистрация успешна'}), 201
 
 @auth_bp.route('/login', methods=['POST'])

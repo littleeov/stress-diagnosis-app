@@ -15,7 +15,8 @@ class User(UserMixin, db.Model):
     is_company = db.Column(db.Boolean, nullable=False, default=False)
     employee = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(),
+                            onupdate=db.func.now())
 
     assessments = db.relationship("Assessment", back_populates="user")
 

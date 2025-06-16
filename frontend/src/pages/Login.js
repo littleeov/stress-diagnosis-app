@@ -67,7 +67,7 @@ const Login = () => {
             required
           />
 
-          <Button type="submit" variant="contained" size="large" fullWidth>
+          <Button type="submit" variant="contained" color="primary" size="large" fullWidth>
             Войти
           </Button>
         </Stack>

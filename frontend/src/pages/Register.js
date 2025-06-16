@@ -66,7 +66,6 @@ const Register = () => {
       navigate('/login');
     } catch (err) {
       console.error('Ошибка регистрации', err);
-      // Здесь можно добавить уведомление об ошибке
     }
   };
 

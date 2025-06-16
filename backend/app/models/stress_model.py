@@ -1,5 +1,5 @@
 from tensorflow.keras.models import load_model
-from .preprocessing import tokenizer, preprocess_text  # поменяем название на правильное
+from .preprocessing import tokenizer, preprocess_text
 import os
 
 _model = None

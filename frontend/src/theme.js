@@ -5,14 +5,14 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: 'rgb(123, 206, 55)', // мягкий зелёный
-      light: 'rgb(155, 227, 95)', // светлее
-      dark: 'rgb(94, 184, 20)', // темнее
+      main: 'rgb(141,221,128)', // мягкий зелёный
+      light: 'rgb(146,229,133) ', // светлее
+      dark: 'rgb(119,187,108)', // темнее
     },
     secondary: {
-      main: 'rgb(42, 159, 109)', // акцентный бирюзовый
-      light: 'rgb(73, 176, 132)',
-      dark: 'rgb(15, 141, 87)',
+      main: 'rgb(97,153,89)', // акцентный бирюзовый
+      light: 'rgb(119,187,108)' ,
+      dark: 'rgb(76,119,69)',
     },
     background: {
       default: '#f8fff5', // мягкий фон
@@ -27,7 +27,7 @@ const theme = createTheme({
     }
   },
   typography: {
-    fontFamily: `'Poppins', 'Helvetica', 'Arial', sans-serif`,
+    fontFamily: `'Poppins', sans-serif`,
     h4: {
       fontWeight: 600,
     },

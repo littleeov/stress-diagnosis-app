@@ -26,9 +26,9 @@ def get_profile():
 @login_required
 def save_assessment():
     data = request.get_json()
-    response_data = data.get('response_data')  # массив ответов
-    stress_score = data.get('stress_score')  # итоговый средний балл
-    details = data.get('details', [])        # массив с деталями (user_answer, model_score)
+    response_data = data.get('response_data')
+    stress_score = data.get('stress_score')
+    details = data.get('details', [])
 
     assessment = Assessment(
         user_id=current_user.id,
@@ -57,7 +57,9 @@ def save_assessment():
 @users_bp.route('/assessments/last', methods=['GET'])
 @login_required
 def get_last_assessment():
-    assessment = Assessment.query.filter_by(user_id=current_user.id).order_by(Assessment.created_at.desc()).first()
+    assessment = (Assessment.query.filter_by
+                  (user_id=current_user.id).order_by
+                  (Assessment.created_at.desc()).first())
     if not assessment:
         return jsonify({'error': 'Нет данных'}), 404
     return jsonify({
@@ -70,7 +72,9 @@ def get_last_assessment():
 @users_bp.route('/assessments', methods=['GET'])
 @login_required
 def get_assessments():
-    assessments = Assessment.query.filter_by(user_id=current_user.id).order_by(Assessment.created_at.desc()).all()
+    assessments = (Assessment.query.filter_by
+                   (user_id=current_user.id).order_by
+                   (Assessment.created_at.desc()).all())
     result = []
     for a in assessments:
         result.append({
@@ -88,13 +92,14 @@ def company_stats():
         return jsonify({'error': 'Доступ только для компаний'}), 403
 
     employees = User.query.filter_by(employee=current_user.name).all()
-
     stressed = 0
     no_stress = 0
     employees_results = []
 
     for emp in employees:
-        last_assessment = Assessment.query.filter_by(user_id=emp.id).order_by(Assessment.created_at.desc()).first()
+        last_assessment = (Assessment.query.filter_by
+                           (user_id=emp.id).order_by
+                           (Assessment.created_at.desc()).first())
         if last_assessment:
             score = last_assessment.stress_score
             employees_results.append({
@@ -118,3 +123,36 @@ def company_stats():
         'no_stress_percent': no_stress_percent,
         'employees_results': employees_results
     })
+
+@users_bp.route('/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    user = current_user
+
+    try:
+        # Для компании: companyName → name
+        if user.is_company:
+            if 'companyName' in data:
+                user.name = data['companyName']
+            if 'username' in data:
+                user.username = data['username']
+        else:
+            # Для обычного пользователя обновляем поля напрямую
+            if 'surname' in data:
+                user.surname = data['surname']
+            if 'name' in data:
+                user.name = data['name']
+            if 'patronymic' in data:
+                user.patronymic = data['patronymic']
+            if 'username' in data:
+                user.username = data['username']
+            if 'employee' in data:
+                user.employee = data['employee']
+
+        db.session.commit()
+        return jsonify({'message': 'Профиль успешно обновлён'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Ошибка при обновлении профиля', 'details': str(e)}), 500
